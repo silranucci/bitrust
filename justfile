@@ -1,22 +1,44 @@
 set shell := ["bash", "-cu"]
 
-# Default: show available commands
+# Show available commands
 default:
     @just --list
 
+# BUILD
+
+# Build all crates
+build:
+    cargo build --workspace
+
+# Build release
+release:
+    cargo build --workspace --release
+
+# Build with native CPU optimizations
+release-native:
+    RUSTFLAGS="-C target-cpu=native" cargo build --workspace --release
+
+# TEST
+
 # Run all tests with nextest
 test *ARGS:
-    cargo nextest run {{ARGS}}
+    cargo nextest run --workspace {{ARGS}}
 
-# Run tests with coverage report
+# Run tests for a specific crate
+test-crate CRATE *ARGS:
+    cargo nextest run -p {{CRATE}} {{ARGS}}
+
+# Run tests with coverage
 coverage:
-    cargo llvm-cov nextest --html --open
+    cargo llvm-cov nextest --workspace --html --open
 
-# Run clippy with strict settings
+#  LINT/FORMAT
+
+# Run clippy on all crates
 lint:
-    cargo clippy --all-targets --all-features -- -D warnings -D clippy::pedantic -A clippy::must_use_candidate -A clippy::missing_errors_doc
+    cargo clippy --workspace --all-targets -- -D warnings
 
-# Format code
+# Format all code
 fmt:
     cargo fmt --all
 
@@ -24,13 +46,62 @@ fmt:
 fmt-check:
     cargo fmt --all -- --check
 
+# Full CI check
+ci: fmt-check lint test audit
+    @echo "All CI checks passed!"
+
+# RUN
+
+# Run the server
+server *ARGS:
+    cargo run --bin bitcaskd -- {{ARGS}}
+
+# Run the server (release)
+server-release *ARGS:
+    cargo run --release --bin bitcaskd -- {{ARGS}}
+
+# Run the CLI
+cli *ARGS:
+    cargo run --bin bitcask -- {{ARGS}}
+
+# Run the CLI (release)
+cli-release *ARGS:
+    cargo run --release --bin bitcask -- {{ARGS}}
+
+# BENCHMARK/PROFILE
+
 # Run benchmarks
 bench *ARGS:
     cargo criterion {{ARGS}}
 
-# Generate flamegraph for benchmarks
+# Generate flamegraph
 flame BENCH:
     cargo flamegraph --bench {{BENCH}} -- --bench
+
+# gRPC/PROTO
+
+# Lint proto files with buf
+proto-lint:
+    buf lint proto
+
+# Format proto files
+proto-fmt:
+    buf format proto -w
+
+# Test gRPC calls with grpcurl (server must be running)
+grpc-list:
+    grpcurl -plaintext '[::1]:50051' list
+
+grpc-get KEY:
+    grpcurl -plaintext -d '{"key":"{{KEY}}"}' '[::1]:50051' bitcask.v1.BitcaskService/Get
+
+grpc-put KEY VALUE:
+    grpcurl -plaintext -d '{"key":"{{KEY}}","value":"{{VALUE}}"}' '[::1]:50051' bitcask.v1.BitcaskService/Put
+
+grpc-stats:
+    grpcurl -plaintext '[::1]:50051' bitcask.v1.BitcaskService/Stats
+
+# UTILITIES
 
 # Security audit
 audit:
@@ -45,19 +116,7 @@ outdated:
 clean:
     cargo clean
 
-# Full CI check
-ci: fmt-check lint test audit
-    @echo "All CI checks passed!"
-
-# Build optimized release
-release:
-    cargo build --release
-
-# Build with native CPU optimizations
-release-native:
-    RUSTFLAGS="-C target-cpu=native" cargo build --release
-
-# Run bacon in background (default: check)
+# Watch mode (bacon)
 watch *ARGS:
     bacon {{ARGS}}
 

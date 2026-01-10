@@ -1,0 +1,39 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/bitrust-core",
+    "crates/bitrust-proto",
+    "crates/bitrust-server",
+    "crates/bitrust-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+authors = ["Silvestro Ranucci <sranu@pm.me>"]
+license = "MIT"
+repository = "https://github.com/silranucci/bitrust"
+
+[workspace.dependencies]
+
+[workspace.lints.rust]
+unsafe_code = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+
+[profile.bench]
+inherits = "release"
+debug = true
+
+[profile.dev.package."*"]
+opt-level = 2

@@ -1,3 +1,10 @@
+mod commands;
+
+use clap::Parser;
+
+use commands::Cli;
+
 fn main() {
-    println!("Hello, world!");
+    let cli = Cli::parse();
+    cli.run();
 }

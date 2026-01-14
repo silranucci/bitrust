@@ -1,10 +1,14 @@
 mod commands;
 
 use clap::Parser;
-
 use commands::Cli;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
-    cli.run();
+
+    if let Err(e) = cli.run().await {
+        eprintln!("Error: {:#}", e);
+        std::process::exit(1);
+    }
 }

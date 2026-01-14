@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package bitrust.v1;
+
+// Bitrust provides key-value storage operations.
+service Bitrust {
+  // Get retrieves a value by key.
+  rpc Get(GetRequest) returns (GetResponse);
+  // Put stores a key-value pair.
+  rpc Put(PutRequest) returns (PutResponse);
+}
+
+// Get
+message GetRequest {
+  string key = 1;
+}
+
+message GetResponse {
+  oneof result {
+    string value = 1;
+    bool not_found = 2;
+  }
+}
+
+// Put
+message PutRequest {
+  string key = 1;
+  string value = 2;
+}
+
+message PutResponse {
+  string key = 1;
+  string value = 2;
+}

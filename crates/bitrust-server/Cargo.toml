@@ -8,6 +8,9 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+bitrust-proto = { path = "../bitrust-proto"}
+tokio = { version = "1.49.0", features = ["full"] }
+tonic = "0.14.2"
 
 [lints]
 workspace = true

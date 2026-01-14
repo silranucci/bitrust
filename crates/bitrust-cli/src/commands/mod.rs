@@ -1,47 +1,44 @@
-use clap::{Parser, Subcommand, command};
+use anyhow::Result;
+use bitrust_proto::BitrustClient;
+use clap::{Parser, Subcommand};
 
 mod get;
-mod set;
+mod put;
+
+// TODO: use env or cli option
+const DEFAULT_ENDPOINT: &str = "http://[::1]:50051";
 
 #[derive(Parser)]
-#[command(name = "bitrust-cli")]
-#[command(about = "bitrust command line interface")]
+#[command(name = "bitrust")]
+#[command(about = "Bitrust key-value store CLI")]
 #[command(version)]
 pub struct Cli {
+    #[arg(short, long, default_value = DEFAULT_ENDPOINT, global = true)]
+    pub endpoint: String,
+
     #[command(subcommand)]
     pub command: Commands,
 }
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Add a new key-value pair
-    Set {
-        /// Key
-        key: String,
+    /// Store a key-value pair
+    Put { key: String, value: String },
 
-        /// Value
-        value: String,
-    },
-
-    /// Retrieve a value associated with a specific key
-    Get {
-        /// Key
-        key: String,
-    },
+    /// Retrieve a value by key
+    Get { key: String },
 }
 
 impl Cli {
-    pub fn run(self) -> () {
-        match self.command {
-            Commands::Set { key, value } => match set::handle(key, value) {
-                Ok((key, value)) => println!("{}-{}", key, value),
-                Err(e) => eprintln!("{e}"),
-            },
+    pub async fn run(self) -> Result<()> {
+        let mut client = BitrustClient::connect(self.endpoint).await?;
 
-            Commands::Get { key } => match get::handle(key) {
-                Ok(value) => println!("{value}"),
-                Err(e) => eprintln!("{e}"),
-            },
+        match self.command {
+            Commands::Put { key, value } => put::handle(&mut client, key, value).await?,
+
+            Commands::Get { key } => get::handle(&mut client, key).await?,
         }
+
+        Ok(())
     }
 }
